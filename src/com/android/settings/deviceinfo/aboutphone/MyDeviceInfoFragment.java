@@ -23,12 +23,20 @@ import android.app.settings.SettingsEnums;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.UserInfo;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.UserManager;
+import android.provider.Settings;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
+import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceScreen;
 
@@ -37,7 +45,6 @@ import com.android.settings.Utils;
 import com.android.settings.dashboard.DashboardFragment;
 import com.android.settings.deviceinfo.BluetoothAddressPreferenceController;
 import com.android.settings.deviceinfo.BuildNumberPreferenceController;
-import com.android.settings.deviceinfo.DeviceNamePreferenceController;
 import com.android.settings.deviceinfo.FccEquipmentIdPreferenceController;
 import com.android.settings.deviceinfo.FeedbackPreferenceController;
 import com.android.settings.deviceinfo.IpAddressPreferenceController;
@@ -54,6 +61,7 @@ import com.android.settings.deviceinfo.simstatus.SlotSimStatus;
 import com.android.settings.flags.Flags;
 import com.android.settings.search.BaseSearchIndexProvider;
 import com.android.settings.widget.EntityHeaderController;
+import com.android.settings.wifi.tether.WifiDeviceNameTextValidator;
 import com.android.settingslib.core.AbstractPreferenceController;
 import com.android.settingslib.core.lifecycle.Lifecycle;
 import com.android.settingslib.search.SearchIndexable;
@@ -68,10 +76,12 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 @SearchIndexable
-public class MyDeviceInfoFragment extends DashboardFragment
-        implements DeviceNamePreferenceController.DeviceNamePreferenceHost {
+public class MyDeviceInfoFragment extends DashboardFragment {
 
     private static final String LOG_TAG = "MyDeviceInfoFragment";
+    private static final String KEY_ABOUT_PHONE_DEVICE_NAME_CARD =
+            AboutPhoneDeviceNamePreference.KEY;
+    private static final String KEY_ABOUT_PHONE_STORAGE_CARD = AboutPhoneStoragePreference.KEY;
     private static final String KEY_EID_INFO = "eid_info";
     private static final String KEY_MY_DEVICE_INFO_HEADER = "my_device_info_header";
 
@@ -92,9 +102,10 @@ public class MyDeviceInfoFragment extends DashboardFragment
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        use(DeviceNamePreferenceController.class).setHost(this /* parent */);
         mBuildNumberPreferenceController = use(BuildNumberPreferenceController.class);
-        mBuildNumberPreferenceController.setHost(this /* parent */);
+        if (mBuildNumberPreferenceController != null) {
+            mBuildNumberPreferenceController.setHost(this /* parent */);
+        }
     }
 
     @Override
@@ -118,11 +129,13 @@ public class MyDeviceInfoFragment extends DashboardFragment
             // remove the preference created from resource to avoid duplicated key
             preferenceScreen.removePreferenceRecursively(KEY_EID_INFO);
         }
+        initAboutPhoneDeviceNameCard(preferenceScreen);
     }
 
     @Override
     public void onStart() {
         super.onStart();
+        refreshAboutPhoneCards();
     }
 
     @Override
@@ -204,7 +217,8 @@ public class MyDeviceInfoFragment extends DashboardFragment
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (mBuildNumberPreferenceController.onActivityResult(requestCode, resultCode, data)) {
+        if (mBuildNumberPreferenceController != null
+                && mBuildNumberPreferenceController.onActivityResult(requestCode, resultCode, data)) {
             return;
         }
         super.onActivityResult(requestCode, resultCode, data);
@@ -243,26 +257,107 @@ public class MyDeviceInfoFragment extends DashboardFragment
         controller.done(true /* rebindActions */);
     }
 
-    @Override
+    private void initAboutPhoneDeviceNameCard(@NonNull PreferenceScreen preferenceScreen) {
+        final AboutPhoneDeviceNamePreference preference =
+                preferenceScreen.findPreference(KEY_ABOUT_PHONE_DEVICE_NAME_CARD);
+        if (preference == null) {
+            return;
+        }
+        preference.setCardClickListener(this::showDeviceNameEditDialog);
+    }
+
+    private void showDeviceNameEditDialog() {
+        final Activity activity = getActivity();
+        if (activity == null) {
+            return;
+        }
+
+        final View dialogView = LayoutInflater.from(activity).inflate(
+                R.layout.dialog_edittext, null /* root */);
+        final EditText editText = dialogView.findViewById(R.id.edittext);
+        final String currentDeviceName = getCurrentDeviceName(activity);
+        final WifiDeviceNameTextValidator validator = new WifiDeviceNameTextValidator();
+
+        editText.setHint(R.string.my_device_info_device_name_preference_title);
+        editText.setText(currentDeviceName);
+        Utils.setEditTextCursorPosition(editText);
+
+        final AlertDialog dialog = new AlertDialog.Builder(activity)
+                .setTitle(R.string.my_device_info_device_name_preference_title)
+                .setView(dialogView)
+                .setPositiveButton(R.string.save, null /* listener */)
+                .setNegativeButton(com.android.internal.R.string.cancel, null /* listener */)
+                .create();
+
+        dialog.setOnShowListener(dialogInterface -> {
+            final View positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            positiveButton.setEnabled(validator.isTextValid(editText.getText().toString()));
+            positiveButton.setOnClickListener(v -> {
+                final String deviceName = editText.getText().toString();
+                if (!validator.isTextValid(deviceName)) {
+                    return;
+                }
+                dialog.dismiss();
+                showDeviceNameWarningDialog(deviceName);
+            });
+            editText.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    positiveButton.setEnabled(validator.isTextValid(s.toString()));
+                }
+            });
+        });
+        dialog.setOnDismissListener(dialogInterface -> editText.clearFocus());
+        dialog.show();
+        editText.requestFocus();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setSoftInputMode(
+                    WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+        }
+    }
+
+    private static String getCurrentDeviceName(@NonNull Context context) {
+        final String deviceName = Settings.Global.getString(
+                context.getContentResolver(), Settings.Global.DEVICE_NAME);
+        return deviceName != null ? deviceName : Build.MODEL;
+    }
+
     public void showDeviceNameWarningDialog(String deviceName) {
         mDeviceInfoViewModel.setDeviceName(deviceName);
         DeviceNameWarningDialog.show(this);
     }
 
     public void onSetDeviceNameConfirm(boolean confirm) {
-        if (!isCatalystEnabled() || !Flags.catalystAboutPhoneDeviceName()) {
-            final DeviceNamePreferenceController controller = use(
-                    DeviceNamePreferenceController.class);
-            controller.updateDeviceName(confirm);
-        } else {
-            if (confirm) {
-                final String deviceName = mDeviceInfoViewModel.getDeviceName();
-                if (deviceName != null) {
-                    UtilsKt.updateDeviceName(getActivity(), deviceName);
-                }
+        if (confirm) {
+            final String deviceName = mDeviceInfoViewModel.getDeviceName();
+            final Activity activity = getActivity();
+            if (deviceName != null && activity != null) {
+                UtilsKt.updateDeviceName(activity, deviceName);
             }
         }
         mDeviceInfoViewModel.clearDeviceNme();
+        refreshAboutPhoneCards();
+    }
+
+    private void refreshAboutPhoneCards() {
+        final AboutPhoneDeviceNamePreference deviceNamePreference =
+                getPreferenceScreen().findPreference(KEY_ABOUT_PHONE_DEVICE_NAME_CARD);
+        if (deviceNamePreference != null) {
+            deviceNamePreference.refresh();
+        }
+        final AboutPhoneStoragePreference storagePreference =
+                getPreferenceScreen().findPreference(KEY_ABOUT_PHONE_STORAGE_CARD);
+        if (storagePreference != null) {
+            storagePreference.refresh();
+        }
     }
 
     @Override

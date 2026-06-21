@@ -21,28 +21,30 @@
     android:key="my_device_info_pref_screen"
     android:title="@string/about_settings">
 
-    <PreferenceCategory
-        android:key="basic_info_category"
-        android:selectable="false"
-        android:title="@string/my_device_info_basic_info_category_title">
+    <com.android.settings.deviceinfo.aboutphone.AboutPhoneSystemUpdatePreference
+        android:key="about_phone_system_update_card"
+        android:order="-100"
+        settings:searchable="false"/>
 
-        <!-- Device name -->
-        <com.android.settings.widget.ValidatedEditTextPreference
-            android:key="device_name"
-            android:order="1"
-            android:title="@string/my_device_info_device_name_preference_title"
-            android:summary="@string/summary_placeholder"
-            settings:controller="com.android.settings.deviceinfo.DeviceNamePreferenceController"
-            settings:enableCopying="true"/>
+    <!-- Device name -->
+    <com.android.settings.deviceinfo.aboutphone.AboutPhoneDeviceNamePreference
+        android:key="about_phone_device_name_card"
+        android:order="-99"
+        settings:searchable="false"/>
 
-        <!-- Account name -->
+    <com.android.settings.deviceinfo.aboutphone.AboutPhoneStoragePreference
+        android:key="about_phone_storage_card"
+        android:order="-98"
+        settings:searchable="false"/>
+
+        <!-- Account name 
         <Preference
             android:key="branded_account"
             android:order="2"
             android:title="@string/my_device_info_account_preference_title"
             android:summary="@string/summary_placeholder"
             settings:enableCopying="true"
-            settings:controller="com.android.settings.deviceinfo.BrandedAccountPreferenceController"/>
+            settings:controller="com.android.settings.deviceinfo.BrandedAccountPreferenceController"/> -->
 
         <!-- Phone number -->
         <!-- Preference
@@ -53,7 +55,6 @@
             settings:isPreferenceVisible="@bool/config_show_sim_info"
             settings:controller="com.android.settings.deviceinfo.PhoneNumberPreferenceController"
             settings:enableCopying="true"/ -->
-    </PreferenceCategory>
 
     <PreferenceCategory
         android:key="legal_category"

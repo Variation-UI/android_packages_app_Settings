@@ -1104,6 +1104,63 @@
         <item name="android:singleLine">true</item>
     </style>
 
+    <style name="AboutPhoneInfoCard">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">88dp</item>
+        <item name="android:background">@drawable/about_phone_card_background</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingStart">25dp</item>
+        <item name="android:paddingTop">18dp</item>
+        <item name="android:paddingEnd">20dp</item>
+        <item name="android:paddingBottom">18dp</item>
+    </style>
+
+    <style name="AboutPhoneInfoCardIconFrame">
+        <item name="android:layout_width">42dp</item>
+        <item name="android:layout_height">42dp</item>
+        <item name="android:background">@drawable/about_phone_card_icon_background</item>
+    </style>
+
+    <style name="AboutPhoneInfoCardTextContainer">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">vertical</item>
+    </style>
+
+    <style name="AboutPhoneInfoCardTitle" parent="@android:style/TextAppearance.Material">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:fontFamily">google-sans</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textColor">@color/settingslib_materialColorOnSurface</item>
+        <item name="android:textSize">17sp</item>
+    </style>
+
+    <style name="AboutPhoneInfoCardSummary" parent="@android:style/TextAppearance.Material.Small">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">5dp</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:textColor">@color/settingslib_materialColorOnSurfaceVariant</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+
+    <style name="AboutPhoneInfoCardChevron">
+        <item name="android:layout_width">24dp</item>
+        <item name="android:layout_height">24dp</item>
+        <item name="android:layout_marginStart">8dp</item>
+        <item name="android:contentDescription">@null</item>
+        <item name="android:src">@drawable/ic_chevron_right_24dp</item>
+        <item name="android:tint">@color/settingslib_materialColorOnSurfaceVariant</item>
+    </style>
+
     <style name="BiometricsEnrollStyle">
         <item name="biometricsEnrollIcon">?android:attr/colorAccent</item>
         <item name="biometricsMovingTargetFill">?android:attr/colorButtonNormal</item>

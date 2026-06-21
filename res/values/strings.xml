@@ -11289,6 +11289,10 @@
 
     <!-- Summary of storage usage [CHAR LIMIT=NONE] -->
     <string name="storage_toplevel_summary"><xliff:g id="percentage" example="54%">%1$s</xliff:g> used - <xliff:g id="free_space" example="32GB">%2$s</xliff:g> free</string>
+    <!-- Title for storage usage in About phone cards [CHAR LIMIT=40] -->
+    <string name="about_phone_storage_used_title">Used <xliff:g id="used_space" example="64 GB">%1$s</xliff:g></string>
+    <!-- Summary for total storage in About phone cards [CHAR LIMIT=40] -->
+    <string name="about_phone_storage_total_summary">Total <xliff:g id="total_space" example="128 GB">%1$s</xliff:g></string>
 
     <!-- Summary for Display settings, explaining a few important settings under it [CHAR LIMIT=NONE]-->
     <string name="display_dashboard_summary">Dark theme, font size, brightness</string>
