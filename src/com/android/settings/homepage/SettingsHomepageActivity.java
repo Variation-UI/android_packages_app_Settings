@@ -366,15 +366,6 @@ public class SettingsHomepageActivity extends FragmentActivity implements
         }
         mIsRegularLayout = !mIsRegularLayout;
 
-        // Update search title padding
-        View searchTitle = findViewById(R.id.search_bar_title);
-        if (searchTitle != null) {
-            int paddingStart = getResources().getDimensionPixelSize(
-                    mIsRegularLayout
-                            ? R.dimen.search_bar_title_padding_start_regular_two_pane
-                            : R.dimen.search_bar_title_padding_start);
-            searchTitle.setPaddingRelative(paddingStart, 0, 0, 0);
-        }
         // Notify fragments
         getSupportFragmentManager().getFragments().forEach(fragment -> {
             if (fragment instanceof SplitLayoutListener) {
