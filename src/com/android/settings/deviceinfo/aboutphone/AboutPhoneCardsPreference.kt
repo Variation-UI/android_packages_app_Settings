@@ -23,8 +23,18 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.ColorFilter
+import android.graphics.Path
+import android.graphics.PixelFormat
+import android.graphics.Rect
+import android.graphics.RectF
+import android.graphics.RenderEffect
+import android.graphics.RenderNode
+import android.graphics.Shader
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.RippleDrawable
 import android.os.Build
 import android.os.Bundle
@@ -68,6 +78,8 @@ private const val DEFAULT_CARD_TITLE_TEXT_SIZE_SP = 17f
 private const val PRIMARY_CARD_TITLE_TEXT_SIZE_SP = 24f
 private const val CARD_BACKGROUND_SURFACE_BLEND_RATIO = 0.68f
 private const val WALLPAPER_CARD_BACKGROUND_SURFACE_BLEND_RATIO = 0.58f
+private const val WALLPAPER_BLUR_RADIUS_DP = 26
+private const val WALLPAPER_OVERLAY_ALPHA = 0x66
 private const val WALLPAPER_GRADIENT_FLOW_DURATION_MS = 16_000L
 private const val WALLPAPER_GRADIENT_FLOW_FRAME_DELAY_MS = 120L
 private const val CARD_ICON_SURFACE_BLEND_RATIO = 0.32f
@@ -159,6 +171,138 @@ private class FlowingGradientRippleDrawable(
             (Color.green(fromColor) * fromRatio + Color.green(toColor) * toRatio).roundToInt(),
             (Color.blue(fromColor) * fromRatio + Color.blue(toColor) * toRatio).roundToInt(),
         )
+    }
+}
+
+private class BlurredWallpaperDrawable(
+    context: Context,
+    private val wallpaperDrawable: Drawable,
+    private val cornerRadius: Float,
+    blurRadius: Float,
+    overlayColor: Int,
+) : Drawable(), Drawable.Callback {
+
+    private val renderNode = RenderNode("AboutPhoneWallpaperBackground")
+    private val roundedClipPath = Path()
+    private val clipRect = RectF()
+    private val wallpaperBounds = Rect()
+    private val overlayDrawable = GradientDrawable().apply {
+        shape = GradientDrawable.RECTANGLE
+        this.cornerRadius = cornerRadius
+        setColor(overlayColor)
+    }
+    private val fallbackColorDrawable = GradientDrawable().apply {
+        shape = GradientDrawable.RECTANGLE
+        this.cornerRadius = cornerRadius
+        setColor(
+            context.getColor(
+                com.android.settingslib.widget.theme.R.color
+                    .settingslib_materialColorSecondaryContainer,
+            ),
+        )
+    }
+
+    init {
+        wallpaperDrawable.callback = this
+        renderNode.setRenderEffect(
+            RenderEffect.createBlurEffect(blurRadius, blurRadius, Shader.TileMode.CLAMP),
+        )
+    }
+
+    override fun draw(canvas: Canvas) {
+        val bounds = bounds
+        if (bounds.isEmpty) {
+            return
+        }
+
+        val saveCount = canvas.save()
+        canvas.clipRoundRect(bounds)
+        if (canvas.isHardwareAccelerated) {
+            drawBlurredWallpaper(canvas, bounds)
+        } else {
+            drawWallpaper(bounds, canvas)
+        }
+        overlayDrawable.bounds = bounds
+        overlayDrawable.draw(canvas)
+        canvas.restoreToCount(saveCount)
+    }
+
+    private fun drawBlurredWallpaper(canvas: Canvas, bounds: Rect) {
+        renderNode.setPosition(bounds.left, bounds.top, bounds.right, bounds.bottom)
+        val recordingCanvas = renderNode.beginRecording(bounds.width(), bounds.height())
+        try {
+            wallpaperBounds.set(0, 0, bounds.width(), bounds.height())
+            drawWallpaper(wallpaperBounds, recordingCanvas)
+        } finally {
+            renderNode.endRecording()
+        }
+        canvas.drawRenderNode(renderNode)
+    }
+
+    private fun drawWallpaper(bounds: Rect, canvas: Canvas) {
+        val intrinsicWidth = wallpaperDrawable.intrinsicWidth
+        val intrinsicHeight = wallpaperDrawable.intrinsicHeight
+        if (intrinsicWidth <= 0 || intrinsicHeight <= 0) {
+            fallbackColorDrawable.bounds = bounds
+            fallbackColorDrawable.draw(canvas)
+            return
+        }
+
+        val scale = maxOf(
+            bounds.width().toFloat() / intrinsicWidth,
+            bounds.height().toFloat() / intrinsicHeight,
+        )
+        val scaledWidth = intrinsicWidth * scale
+        val scaledHeight = intrinsicHeight * scale
+        val left = bounds.left + (bounds.width() - scaledWidth) / 2f
+        val top = bounds.top + (bounds.height() - scaledHeight) / 2f
+
+        wallpaperDrawable.setBounds(
+            left.roundToInt(),
+            top.roundToInt(),
+            (left + scaledWidth).roundToInt(),
+            (top + scaledHeight).roundToInt(),
+        )
+        wallpaperDrawable.draw(canvas)
+    }
+
+    override fun onBoundsChange(bounds: Rect) {
+        overlayDrawable.bounds = bounds
+        fallbackColorDrawable.bounds = bounds
+    }
+
+    override fun setAlpha(alpha: Int) {
+        wallpaperDrawable.alpha = alpha
+        overlayDrawable.alpha = alpha
+        fallbackColorDrawable.alpha = alpha
+    }
+
+    override fun setColorFilter(colorFilter: ColorFilter?) {
+        wallpaperDrawable.colorFilter = colorFilter
+        overlayDrawable.colorFilter = colorFilter
+        fallbackColorDrawable.colorFilter = colorFilter
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+
+    override fun invalidateDrawable(who: Drawable) {
+        invalidateSelf()
+    }
+
+    override fun scheduleDrawable(who: Drawable, what: Runnable, `when`: Long) {
+        scheduleSelf(what, `when`)
+    }
+
+    override fun unscheduleDrawable(who: Drawable, what: Runnable) {
+        unscheduleSelf(what)
+    }
+
+    private fun Canvas.clipRoundRect(bounds: Rect) {
+        clipRect.set(bounds)
+        roundedClipPath.reset()
+        roundedClipPath.addRoundRect(clipRect, cornerRadius, cornerRadius, Path.Direction.CW)
+        clipPath(roundedClipPath)
     }
 }
 
@@ -303,6 +447,10 @@ abstract class AboutPhoneCardPreference @JvmOverloads constructor(
         )
 
     private fun Context.createCardBackground(style: AboutPhoneCardStyle): RippleDrawable {
+        if (style.useWallpaperColor) {
+            createWallpaperCardBackground(style)?.let { return it }
+        }
+
         val fillDrawable = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             cornerRadius = dp(25).toFloat()
@@ -342,6 +490,51 @@ abstract class AboutPhoneCardPreference @JvmOverloads constructor(
             )
         }
     }
+
+    private fun Context.createWallpaperCardBackground(style: AboutPhoneCardStyle): RippleDrawable? {
+        val wallpaperDrawable = getWallpaperDrawable() ?: return null
+        val cornerRadius = dp(25).toFloat()
+        val maskDrawable = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            this.cornerRadius = cornerRadius
+            setColor(Color.WHITE)
+        }
+        val backgroundDrawable = BlurredWallpaperDrawable(
+            context = this,
+            wallpaperDrawable = wallpaperDrawable,
+            cornerRadius = cornerRadius,
+            blurRadius = dp(WALLPAPER_BLUR_RADIUS_DP).toFloat(),
+            overlayColor = getWallpaperOverlayColor(style),
+        )
+        return RippleDrawable(
+            ColorStateList.valueOf(getThemeColor(android.R.attr.colorControlHighlight)),
+            backgroundDrawable,
+            maskDrawable,
+        )
+    }
+
+    private fun Context.getWallpaperDrawable(): Drawable? =
+        try {
+            getSystemService(WallpaperManager::class.java)
+                ?.getDrawable(WallpaperManager.FLAG_SYSTEM)
+                ?.mutate()
+        } catch (e: SecurityException) {
+            Log.w(TAG, "Unable to access wallpaper drawable", e)
+            null
+        } catch (e: RuntimeException) {
+            Log.w(TAG, "Unable to load wallpaper drawable", e)
+            null
+        }
+
+    private fun Context.getWallpaperOverlayColor(style: AboutPhoneCardStyle): Int =
+        blendArgb(
+            getColor(style.cardContainerColorResId),
+            getColor(
+                com.android.settingslib.widget.theme.R.color
+                    .settingslib_materialColorSurfaceContainerLowest,
+            ),
+            WALLPAPER_CARD_BACKGROUND_SURFACE_BLEND_RATIO,
+        ).withAlpha(WALLPAPER_OVERLAY_ALPHA)
 
     private fun Context.getThemeColor(attrResId: Int): Int {
         val typedValue = TypedValue()
@@ -402,6 +595,9 @@ abstract class AboutPhoneCardPreference @JvmOverloads constructor(
                 .roundToInt(),
         )
     }
+
+    private fun Int.withAlpha(alpha: Int): Int =
+        Color.argb(alpha, Color.red(this), Color.green(this), Color.blue(this))
 
     private fun ViewGroup.LayoutParams?.applyDimensions(
         width: Int,
