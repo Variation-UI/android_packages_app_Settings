@@ -34,6 +34,7 @@ import android.content.pm.PackageManager.ApplicationInfoFlags;
 import android.content.pm.UserInfo;
 import android.content.res.Configuration;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
 import android.os.UserHandle;
@@ -46,6 +47,8 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.annotation.VisibleForTesting;
 import androidx.core.graphics.Insets;
@@ -69,8 +72,11 @@ import com.android.settings.SettingsApplication;
 import com.android.settings.activityembedding.ActivityEmbeddingRulesController;
 import com.android.settings.activityembedding.ActivityEmbeddingUtils;
 import com.android.settings.activityembedding.EmbeddedDeepLinkUtils;
+import com.android.settings.accounts.AvatarViewMixin;
 import com.android.settings.core.CategoryMixin;
 import com.android.settings.core.FeatureFlags;
+import com.android.settings.core.SubSettingLauncher;
+import com.android.settings.deviceinfo.aboutphone.MyDeviceInfoFragment;
 import com.android.settings.flags.Flags;
 import com.android.settings.homepage.contextualcards.ContextualCardsFragment;
 import com.android.settings.overlay.FeatureFactory;
@@ -258,6 +264,8 @@ public class SettingsHomepageActivity extends FragmentActivity implements
         mLoadedListeners = new ArraySet<>();
 
         initSearchBarView();
+        initAccountAvatarView();
+        initHomepageDeviceCard();
 
         getLifecycle().addObserver(new HideNonSystemOverlayMixin(this));
         mCategoryMixin = new CategoryMixin(this);
@@ -309,6 +317,7 @@ public class SettingsHomepageActivity extends FragmentActivity implements
     protected void onStart() {
         ((SettingsApplication) getApplication()).setHomeActivity(this);
         super.onStart();
+        updateHomepageDeviceCardTitle();
         if (mIsEmbeddingActivityEnabled) {
             final SplitController splitController = SplitController.getInstance(this);
             mSplitControllerAdapter = new SplitControllerCallbackAdapter(splitController);
@@ -402,6 +411,46 @@ public class SettingsHomepageActivity extends FragmentActivity implements
         FeatureFactory.getFeatureFactory().getSearchFeatureProvider()
                 .initSearchToolbar(this /* activity */, toolbar,
                         SettingsEnums.SETTINGS_HOMEPAGE);
+    }
+
+    private void initAccountAvatarView() {
+        ImageView avatarView = findViewById(R.id.account_avatar);
+        if (avatarView != null) {
+            getLifecycle().addObserver(new AvatarViewMixin(this, avatarView));
+        }
+    }
+
+    private void initHomepageDeviceCard() {
+        updateHomepageDeviceCardTitle();
+
+        View card = findViewById(R.id.settings_homepage_device_card);
+        if (card != null) {
+            card.setOnClickListener(v -> launchAboutPhone());
+        }
+    }
+
+    private void updateHomepageDeviceCardTitle() {
+        TextView title = findViewById(R.id.settings_homepage_device_card_title);
+        if (title != null) {
+            title.setText(getHomepageDeviceName());
+        }
+    }
+
+    private CharSequence getHomepageDeviceName() {
+        final String deviceName = android.provider.Settings.Global.getString(
+                getContentResolver(), android.provider.Settings.Global.DEVICE_NAME);
+        return TextUtils.isEmpty(deviceName) ? Build.MODEL : deviceName;
+    }
+
+    private void launchAboutPhone() {
+        ActivityEmbeddingRulesController.registerSubSettingsPairRule(this, true /* clearTop */);
+
+        new SubSettingLauncher(this)
+                .setDestination(MyDeviceInfoFragment.class.getName())
+                .setSourceMetricsCategory(SettingsEnums.SETTINGS_HOMEPAGE)
+                .setTitleRes(R.string.about_settings)
+                .setIsSecondLayerPage(true)
+                .launch();
     }
 
     private void updateHomepageUI() {

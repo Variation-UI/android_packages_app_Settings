@@ -37,6 +37,8 @@
 
             <include layout="@layout/settings_homepage_title"/>
 
+            <include layout="@layout/settings_homepage_device_card"/>
+
             <FrameLayout
                 android:id="@+id/suggestion_content"
                 android:layout_width="match_parent"

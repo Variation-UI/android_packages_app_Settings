@@ -14751,6 +14751,8 @@
 
     <!-- Text for Search bar of Settings home screen [CHAR LIMIT=34] -->
     <string name="homepage_search">Search Settings</string>
+    <!-- Content description for the Google account avatar button on Settings home screen. [CHAR LIMIT=80] -->
+    <string name="search_bar_account_avatar_content_description">Google Account</string>
 
     <!-- Keywords for contacts storage item [CHAR LIMIT=NONE] -->
     <string name="keywords_contacts_storage">contacts, storage, account</string>

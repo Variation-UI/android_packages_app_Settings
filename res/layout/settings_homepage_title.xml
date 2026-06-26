@@ -17,6 +17,7 @@
 
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:gravity="center_vertical"
@@ -40,9 +41,30 @@
         android:textSize="34sp" />
 
     <FrameLayout
+        android:id="@+id/account_avatar_container"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:layout_marginStart="16dp">
+        android:layout_marginStart="16dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:contentDescription="@string/search_bar_account_avatar_content_description"
+        android:focusable="true">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/account_avatar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center"
+            android:importantForAccessibility="no"
+            android:padding="8dp"
+            android:scaleType="centerInside"
+            app:shapeAppearanceOverlay="@style/HomepageAccountAvatarShape" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="8dp">
 
         <FrameLayout
             android:id="@+id/search_action_bar"

@@ -66,6 +66,7 @@ public class TopLevelSettings extends DashboardFragment implements SplitLayoutLi
     private static final String TAG = "TopLevelSettings";
     private static final String SAVED_HIGHLIGHT_MIXIN = "highlight_mixin";
     private static final String PREF_KEY_SUPPORT = "top_level_support";
+    private static final String GOOGLE_PLAY_SERVICES_PACKAGE = "com.google.android.gms";
 
     private boolean mIsEmbeddingActivityEnabled;
     private TopLevelHighlightMixin mHighlightMixin;
@@ -295,6 +296,17 @@ public class TopLevelSettings extends DashboardFragment implements SplitLayoutLi
     protected boolean shouldForceRoundedIcon() {
         return getContext().getResources()
                 .getBoolean(R.bool.config_force_rounded_icon_TopLevelSettings);
+    }
+
+    @Override
+    protected boolean displayTile(Tile tile) {
+        if (!super.displayTile(tile)) {
+            return false;
+        }
+        if (tile == null) {
+            return true;
+        }
+        return !TextUtils.equals(tile.getPackageName(), GOOGLE_PLAY_SERVICES_PACKAGE);
     }
 
     @Override
