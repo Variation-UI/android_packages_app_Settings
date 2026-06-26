@@ -531,17 +531,8 @@ public class DashboardFeatureProviderImpl implements DashboardFeatureProvider {
             }
             // Handle homepage icons
             if (TextUtils.equals(tile.getCategory(), CategoryKey.CATEGORY_HOMEPAGE)) {
-                if (SettingsThemeHelper.isExpressiveTheme(mContext)) {
-                    preference.setIcon(getExpressiveHomepageIcon(tile, iconDrawable, iconPackage));
-                    return;
-                }
-                // Skip tinting and Adaptive Icon transformation for homepage account type raw icons
-                if (TextUtils.equals(tile.getGroupKey(), TOP_LEVEL_ACCOUNT_CATEGORY)
-                        && iconPackage == null) {
-                    preference.setIcon(iconDrawable);
-                    return;
-                }
-                iconDrawable.setTint(Utils.getHomepageIconColor(preference.getContext()));
+                preference.setIcon(getHomepageIcon(preference, tile, iconDrawable, iconPackage));
+                return;
             }
 
             if (forceRoundedIcon && !TextUtils.equals(mContext.getPackageName(), iconPackage)) {
@@ -567,6 +558,27 @@ public class DashboardFeatureProviderImpl implements DashboardFeatureProvider {
 
         ColorScheme scheme = getColorScheme(tile);
         return getRoundedIcon(iconDrawable, scheme.foregroundColor, scheme.backgroundColor);
+    }
+
+    private Drawable getHomepageIcon(Preference preference, Tile tile, Drawable iconDrawable,
+            @Nullable String iconPackage) {
+        if (TextUtils.equals(tile.getGroupKey(), TOP_LEVEL_ACCOUNT_CATEGORY)
+                && iconPackage == null) {
+            if (!SettingsThemeHelper.isExpressiveTheme(mContext)) {
+                return iconDrawable;
+            }
+
+            // Normalize size for homepage account type raw image.
+            LayerDrawable drawable = new LayerDrawable(new Drawable[] {iconDrawable});
+            int size = mContext.getResources().getDimensionPixelSize(
+                    R.dimen.dashboard_tile_image_size);
+            drawable.setLayerSize(0, size, size);
+            return drawable;
+        }
+
+        iconDrawable = iconDrawable.mutate();
+        iconDrawable.setTint(Utils.getHomepageIconColor(preference.getContext()));
+        return iconDrawable;
     }
 
     private Drawable getRoundedIcon(Drawable iconDrawable, int fgColorId, int bgColorId) {

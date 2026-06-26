@@ -16,7 +16,11 @@
 
 package com.android.settings.widget;
 
+import android.content.res.ColorStateList;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LayerDrawable;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.preference.Preference;
@@ -30,6 +34,7 @@ import com.android.settingslib.widget.SettingsThemeHelper;
 public class HomepagePreferenceLayoutHelper {
 
     private View mIcon;
+    private ImageView mIconImage;
     private View mText;
     private View mAlertFrame;
     private View mAlertUnnumbered;
@@ -106,6 +111,7 @@ public class HomepagePreferenceLayoutHelper {
 
     void onBindViewHolder(PreferenceViewHolder holder) {
         mIcon = holder.findViewById(R.id.icon_frame);
+        mIconImage = (ImageView) holder.findViewById(android.R.id.icon);
         mText = holder.findViewById(R.id.text_frame);
         mAlertFrame = holder.findViewById(R.id.alert_frame);
         mAlertUnnumbered = holder.findViewById(R.id.alert_unnumbered);
@@ -114,6 +120,30 @@ public class HomepagePreferenceLayoutHelper {
         setIconVisible(mIconVisible);
         setIconPaddingStart(mIconPaddingStart);
         setTextPaddingStart(mTextPaddingStart);
+        updateIconStyle(holder.itemView);
         setAlert(mAlertValue);
+    }
+
+    private void updateIconStyle(View itemView) {
+        if (mIcon != null) {
+            mIcon.setBackground(null);
+            mIcon.setForeground(null);
+        }
+        if (mIconImage == null) {
+            return;
+        }
+
+        mIconImage.setBackground(null);
+        mIconImage.setForeground(null);
+        Drawable icon = mIconImage.getDrawable();
+        if (icon instanceof LayerDrawable) {
+            LayerDrawable layerDrawable = (LayerDrawable) icon;
+            if (layerDrawable.getNumberOfLayers() > 1) {
+                icon = layerDrawable.getDrawable(layerDrawable.getNumberOfLayers() - 1).mutate();
+                mIconImage.setImageDrawable(icon);
+            }
+        }
+        mIconImage.setImageTintList(ColorStateList.valueOf(
+                com.android.settings.Utils.getHomepageIconColor(itemView.getContext())));
     }
 }
