@@ -241,7 +241,8 @@ public class TopLevelSettings extends DashboardFragment implements SplitLayoutLi
                 savedInstanceState);
         recyclerView.setVerticalScrollBarEnabled(false);
         recyclerView.setHorizontalScrollBarEnabled(false);
-        recyclerView.setPadding(mPaddingHorizontal, 0, mPaddingHorizontal, 0);
+        recyclerView.setPadding(mPaddingHorizontal, 0, mPaddingHorizontal,
+                recyclerView.getPaddingBottom());
         return recyclerView;
     }
 
@@ -250,7 +251,7 @@ public class TopLevelSettings extends DashboardFragment implements SplitLayoutLi
         mPaddingHorizontal = padding;
         RecyclerView recyclerView = getListView();
         if (recyclerView != null) {
-            recyclerView.setPadding(padding, 0, padding, 0);
+            recyclerView.setPadding(padding, 0, padding, recyclerView.getPaddingBottom());
         }
     }
 
