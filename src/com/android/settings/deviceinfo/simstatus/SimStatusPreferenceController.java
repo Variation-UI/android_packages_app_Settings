@@ -29,11 +29,13 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Observer;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceCategory;
+import androidx.preference.PreferenceGroup;
 import androidx.preference.PreferenceScreen;
 
 import com.android.settings.R;
 import com.android.settings.Utils;
 import com.android.settings.core.BasePreferenceController;
+import com.android.settings.flags.Flags;
 import com.android.settingslib.search.SearchIndexableRaw;
 
 import java.util.List;
@@ -95,17 +97,22 @@ public class SimStatusPreferenceController extends BasePreferenceController {
             return;
         }
         final PreferenceCategory category = screen.findPreference(KEY_PREFERENCE_CATEGORY);
+        final PreferenceGroup parent = category != null ? category : screen;
 
         mSlotSimStatus.setBasePreferenceOrdering(preference.getOrder());
         screen.removePreference(preference);
         preference.setVisible(false);
+
+        if (Flags.catalystMyDeviceInfoPrefScreen()) {
+            return;
+        }
 
         // Add additional preferences for each sim in the device
         for (int simSlotNumber = 0; simSlotNumber < mSlotSimStatus.size(); simSlotNumber++) {
             final Preference multiSimPreference = createNewPreference(screen.getContext());
             multiSimPreference.setOrder(mSlotSimStatus.getPreferenceOrdering(simSlotNumber));
             multiSimPreference.setKey(mSlotSimStatus.getPreferenceKey(simSlotNumber));
-            category.addPreference(multiSimPreference);
+            parent.addPreference(multiSimPreference);
         }
     }
 

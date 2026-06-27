@@ -21,7 +21,6 @@ import static androidx.core.content.ContextCompat.getMainExecutor;
 import android.app.Activity;
 import android.app.settings.SettingsEnums;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.UserInfo;
 import android.os.Build;
 import android.os.Bundle;
@@ -43,19 +42,7 @@ import androidx.preference.PreferenceScreen;
 import com.android.settings.R;
 import com.android.settings.Utils;
 import com.android.settings.dashboard.DashboardFragment;
-import com.android.settings.deviceinfo.BluetoothAddressPreferenceController;
-import com.android.settings.deviceinfo.BuildNumberPreferenceController;
-import com.android.settings.deviceinfo.FccEquipmentIdPreferenceController;
-import com.android.settings.deviceinfo.FeedbackPreferenceController;
-import com.android.settings.deviceinfo.IpAddressPreferenceController;
-import com.android.settings.deviceinfo.ManualPreferenceController;
-import com.android.settings.deviceinfo.RegulatoryInfoPreferenceController;
-import com.android.settings.deviceinfo.SafetyInfoPreferenceController;
-import com.android.settings.deviceinfo.UptimePreferenceController;
-import com.android.settings.deviceinfo.WifiMacAddressPreferenceController;
 import com.android.settings.deviceinfo.imei.ImeiInfoPreferenceController;
-import com.android.settings.deviceinfo.simstatus.EidStatus;
-import com.android.settings.deviceinfo.simstatus.SimEidPreferenceController;
 import com.android.settings.deviceinfo.simstatus.SimStatusPreferenceController;
 import com.android.settings.deviceinfo.simstatus.SlotSimStatus;
 import com.android.settings.flags.Flags;
@@ -69,7 +56,6 @@ import com.android.settingslib.widget.LayoutPreference;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -82,10 +68,8 @@ public class MyDeviceInfoFragment extends DashboardFragment {
     private static final String KEY_ABOUT_PHONE_DEVICE_NAME_CARD =
             AboutPhoneDeviceNamePreference.KEY;
     private static final String KEY_ABOUT_PHONE_STORAGE_CARD = AboutPhoneStoragePreference.KEY;
-    private static final String KEY_EID_INFO = "eid_info";
+    private static final String KEY_SIM_STATUS = "sim_status";
     private static final String KEY_MY_DEVICE_INFO_HEADER = "my_device_info_header";
-
-    private BuildNumberPreferenceController mBuildNumberPreferenceController;
 
     private DeviceInfoViewModel mDeviceInfoViewModel;
 
@@ -100,34 +84,17 @@ public class MyDeviceInfoFragment extends DashboardFragment {
     }
 
     @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        mBuildNumberPreferenceController = use(BuildNumberPreferenceController.class);
-        if (mBuildNumberPreferenceController != null) {
-            mBuildNumberPreferenceController.setHost(this /* parent */);
-        }
-    }
-
-    @Override
     public void onCreate(@Nullable Bundle icicle) {
         super.onCreate(icicle);
         mDeviceInfoViewModel = new ViewModelProvider(getActivity()).get(DeviceInfoViewModel.class);
     }
 
     @Override
-    protected @NonNull Set<String> getPreferenceKeysInHierarchy() {
-        Set<String> keys = super.getPreferenceKeysInHierarchy();
-        // add async preference key manually
-        keys.add(KEY_EID_INFO);
-        return keys;
-    }
-
-    @Override
     protected void onPreferenceScreenCreatedFromResource(
             @NonNull PreferenceScreen preferenceScreen) {
         if (isCatalystEnabled()) {
-            // remove the preference created from resource to avoid duplicated key
-            preferenceScreen.removePreferenceRecursively(KEY_EID_INFO);
+            preferenceScreen.removePreferenceRecursively(ImeiInfoPreferenceController.DEFAULT_KEY);
+            preferenceScreen.removePreferenceRecursively(KEY_SIM_STATUS);
         }
         initAboutPhoneDeviceNameCard(preferenceScreen);
     }
@@ -155,8 +122,6 @@ public class MyDeviceInfoFragment extends DashboardFragment {
 
     private static List<AbstractPreferenceController> buildPreferenceControllers(
             Context context, MyDeviceInfoFragment fragment, Lifecycle lifecycle) {
-        // disable catalyst for settings search (i.e. fragment is null)
-        boolean isCatalystEnabled = Flags.catalystMyDeviceInfoPrefScreen() && fragment != null;
         final List<AbstractPreferenceController> controllers = new ArrayList<>();
 
         final Executor executor = (fragment == null) ? getMainExecutor(context) :
@@ -164,16 +129,6 @@ public class MyDeviceInfoFragment extends DashboardFragment {
         androidx.lifecycle.Lifecycle lifecycleObject = (fragment == null) ? null :
                 fragment.getLifecycle();
         final SlotSimStatus slotSimStatus = new SlotSimStatus(context, executor, lifecycleObject);
-
-        controllers.add(new IpAddressPreferenceController(context, lifecycle));
-        controllers.add(new WifiMacAddressPreferenceController(context, lifecycle));
-        controllers.add(new BluetoothAddressPreferenceController(context, lifecycle));
-        controllers.add(new RegulatoryInfoPreferenceController(context));
-        controllers.add(new SafetyInfoPreferenceController(context));
-        controllers.add(new ManualPreferenceController(context));
-        controllers.add(new FeedbackPreferenceController(fragment, context));
-        controllers.add(new FccEquipmentIdPreferenceController(context));
-        controllers.add(new UptimePreferenceController(context, lifecycle));
 
         Consumer<String> imeiInfoList = imeiKey -> {
             if (Flags.catalystMyDeviceInfoPrefScreen()) {
@@ -190,38 +145,23 @@ public class MyDeviceInfoFragment extends DashboardFragment {
         }
 
         for (int slotIndex = 0; slotIndex < slotSimStatus.size(); slotIndex++) {
-            SimStatusPreferenceController slotRecord =
-                    new SimStatusPreferenceController(context,
-                            slotSimStatus.getPreferenceKey(slotIndex));
-            slotRecord.init(fragment, slotSimStatus);
-            controllers.add(slotRecord);
+            if (!(Flags.catalystMyDeviceInfoPrefScreen() && fragment != null)) {
+                SimStatusPreferenceController slotRecord =
+                        new SimStatusPreferenceController(context,
+                                slotSimStatus.getPreferenceKey(slotIndex));
+                slotRecord.init(fragment, slotSimStatus);
+                controllers.add(slotRecord);
+            }
 
             if (fragment != null) {
                 imeiInfoList.accept(ImeiInfoPreferenceController.DEFAULT_KEY + (1 + slotIndex));
             }
         }
 
-        if (!isCatalystEnabled) {
-            EidStatus eidStatus = new EidStatus(slotSimStatus, context, executor);
-            SimEidPreferenceController simEid = new SimEidPreferenceController(context,
-                    KEY_EID_INFO);
-            simEid.init(slotSimStatus, eidStatus);
-            controllers.add(simEid);
-        }
-
         if (executor instanceof ExecutorService) {
             ((ExecutorService) executor).shutdown();
         }
         return controllers;
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (mBuildNumberPreferenceController != null
-                && mBuildNumberPreferenceController.onActivityResult(requestCode, resultCode, data)) {
-            return;
-        }
-        super.onActivityResult(requestCode, resultCode, data);
     }
 
     private void initHeader() {

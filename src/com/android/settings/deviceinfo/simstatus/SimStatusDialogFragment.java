@@ -54,15 +54,18 @@ public class SimStatusDialogFragment extends InstrumentedDialogFragment {
     }
 
     public static void show(Fragment host, int slotId, String dialogTitle) {
-        final FragmentManager manager = host.getChildFragmentManager();
-        if (manager.findFragmentByTag(TAG) == null) {
+        show(host.getChildFragmentManager(), slotId, dialogTitle);
+    }
+
+    public static void show(FragmentManager childFragmentManager, int slotId, String dialogTitle) {
+        if (childFragmentManager.findFragmentByTag(TAG) == null) {
             final Bundle bundle = new Bundle();
             bundle.putInt(SIM_SLOT_BUNDLE_KEY, slotId);
             bundle.putString(DIALOG_TITLE_BUNDLE_KEY, dialogTitle);
             final SimStatusDialogFragment dialog =
                     new SimStatusDialogFragment();
             dialog.setArguments(bundle);
-            dialog.show(manager, TAG);
+            dialog.show(childFragmentManager, TAG);
         }
     }
 

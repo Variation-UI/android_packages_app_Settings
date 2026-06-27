@@ -21,6 +21,8 @@ import android.util.ArrayMap;
 import com.android.settings.backup.UserBackupSettingsActivity;
 import com.android.settings.connecteddevice.ConnectedDeviceDashboardFragment;
 import com.android.settings.connecteddevice.usb.UsbDetailsFragment;
+import com.android.settings.deviceinfo.aboutphone.AboutPhoneDetailsFragment;
+import com.android.settings.deviceinfo.aboutphone.MyDeviceInfoFragment;
 import com.android.settings.deviceinfo.batteryinfo.BatteryInfoFragment;
 import com.android.settings.fuelgauge.batteryusage.PowerUsageAdvanced;
 import com.android.settings.fuelgauge.batteryusage.PowerUsageSummary;
@@ -49,6 +51,8 @@ public class CustomSiteMapRegistry {
         CUSTOM_SITE_MAP.put(ScreenLockSettings.class.getName(), SecuritySettings.class.getName());
         CUSTOM_SITE_MAP.put(PowerUsageAdvanced.class.getName(), PowerUsageSummary.class.getName());
         CUSTOM_SITE_MAP.put(BatteryInfoFragment.class.getName(), PowerUsageSummary.class.getName());
+        CUSTOM_SITE_MAP.put(AboutPhoneDetailsFragment.class.getName(),
+                MyDeviceInfoFragment.class.getName());
         CUSTOM_SITE_MAP.put(RecentLocationAccessSeeAllFragment.class.getName(),
                 LocationSettings.class.getName());
         CUSTOM_SITE_MAP.put(UsbDetailsFragment.class.getName(),

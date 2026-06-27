@@ -12772,6 +12772,8 @@
     <string name="my_device_info_device_details_category_title">Device details</string>
     <!-- Title for preference category showing the name of device identifiers. [CHAR LIMIT=60]-->
     <string name="my_device_info_device_identifiers_category_title">Device identifiers</string>
+    <!-- Title for the about phone detailed information page. [CHAR LIMIT=60]-->
+    <string name="my_device_info_details_title">Detailed information</string>
 
     <!-- Title for Wifi Access settings [CHAR LIMIT=35] -->
     <string name="change_wifi_state_title">Wi-Fi control</string>

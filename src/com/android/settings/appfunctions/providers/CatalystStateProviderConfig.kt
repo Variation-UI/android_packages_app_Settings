@@ -61,6 +61,7 @@ import com.android.settings.datausage.DataSaverScreen
 import com.android.settings.datausage.DataUsageAppDetailScreen
 import com.android.settings.datausage.DataUsageListScreen
 import com.android.settings.datetime.DateTimeSettingsScreen
+import com.android.settings.deviceinfo.aboutphone.AboutPhoneDetailsScreen
 import com.android.settings.deviceinfo.aboutphone.MyDeviceInfoScreen
 import com.android.settings.deviceinfo.firmwareversion.FirmwareVersionScreen
 import com.android.settings.deviceinfo.hardwareinfo.DeviceModelPreference
@@ -216,6 +217,7 @@ private fun getCatalystScreenConfigs() =
             screenKey = ApnSettingsScreen.KEY,
             appFunctionTypes = setOf(DeviceStateAppFunctionType.GET_MOBILE_DATA),
         ),
+        PerScreenCatalystConfig(enabled = true, screenKey = AboutPhoneDetailsScreen.KEY),
         PerScreenCatalystConfig(enabled = true, screenKey = MyDeviceInfoScreen.KEY),
         PerScreenCatalystConfig(enabled = true, screenKey = DataSaverScreen.KEY),
         PerScreenCatalystConfig(
