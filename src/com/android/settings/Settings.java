@@ -589,6 +589,7 @@ public class Settings extends SettingsActivity {
         }
     }
     public static class SystemDashboardActivity extends SettingsActivity {}
+    public static class VariaHubActivity extends SettingsActivity {}
     public static class ResetDashboardActivity extends CatalystSettingsActivity {
         public ResetDashboardActivity() {
             super(ResetDashboardScreen.KEY, ResetDashboardFragment.class);

@@ -27,6 +27,16 @@
     <com.android.settingslib.widget.UntitledPreferenceCategory
         android:order="-130"
         android:key="top_level_connectivity_category">
+
+        <com.android.settings.widget.HomepagePreference
+            android:key="top_level_varia"
+            android:title="@string/varia_settings_title"
+            android:summary="@string/varia_settings_summary"
+            android:icon="@drawable/ic_varia"
+	        android:order="-25"
+	        settings:highlightableMenuKey="@string/menu_key_varia"
+            android:fragment="org.varia.hub.VariaHub"/>
+            
         <com.android.settings.widget.HomepagePreference
             android:fragment="com.android.settings.network.NetworkDashboardFragment"
             android:icon="@drawable/ic_homepage_network"

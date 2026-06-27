@@ -55,6 +55,8 @@ android_library {
     srcs: [
         "src/**/*.java",
         "src/**/*.kt",
+        "VariaHub/src/**/*.java",
+        "VariaHub/src/**/*.kt",
     ],
     exclude_srcs: [
         "src/com/android/settings/biometrics/fingerprint2/lib/**/*.kt",
@@ -65,7 +67,8 @@ android_library {
         "res",
         "res-export", // for external usage
         "res-product",
-        "TouchGestures/res"
+        "TouchGestures/res",
+        "VariaHub/res",
     ],
     optional_uses_libs: ["com.android.extensions.appfunctions"],
     static_libs: [
@@ -157,6 +160,11 @@ android_library {
         "device_policy_aconfig_flags",
         "keyboard_flags",
     ],
+
+    optimize: {
+	proguard_flags_files: ["proguard.flags"],
+    },
+
 }
 
 platform_compat_config {

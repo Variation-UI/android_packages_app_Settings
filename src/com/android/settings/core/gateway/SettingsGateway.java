@@ -226,6 +226,7 @@ import com.android.settings.wifi.tether.WifiTetherSettings;
 
 import com.android.settings.livedisplay.LiveDisplaySettings;
 import ink.kscope.settings.wifi.tether.WifiTetherClientManager;
+import org.varia.hub.VariaHub;
 
 public class SettingsGateway {
 
@@ -441,6 +442,7 @@ public class SettingsGateway {
             SafetyCenterFragment.class.getName(),
             LiveDisplaySettings.class.getName(),
             WifiTetherClientManager.class.getName(),
+            VariaHub.class.getName()
     };
 
     public static final String[] SETTINGS_FOR_RESTRICTED = {
@@ -489,5 +491,6 @@ public class SettingsGateway {
             Settings.MemtagPageActivity.class.getName(),
             Settings.NavigationModeSettingsActivity.class.getName(),
             Settings.ShadeSettingsActivity.class.getName(),
+            Settings.VariaHubActivity.class.getName(),
     };
 }
