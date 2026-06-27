@@ -55,6 +55,9 @@ class SecurityPatchLevelPreference :
         currentPatch
             ?: (DeviceInfoUtils.getSecurityPatch(getLocale()) ?: "").also { currentPatch = it }
 
+    override fun createWidget(context: Context): Preference =
+        SecurityPatchCardPreference(context)
+
     override fun bind(preference: Preference, metadata: PreferenceMetadata) {
         super.bind(preference, metadata)
         preference.isCopyingEnabled = true

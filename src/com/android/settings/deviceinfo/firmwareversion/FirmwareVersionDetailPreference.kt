@@ -61,6 +61,9 @@ class FirmwareVersionDetailPreference :
     override fun getSummary(context: Context): CharSequence? =
         Build.VERSION.RELEASE_OR_PREVIEW_DISPLAY
 
+    override fun createWidget(context: Context): Preference =
+        AndroidVersionCardPreference(context)
+
     override fun bind(preference: Preference, metadata: PreferenceMetadata) {
         super.bind(preference, metadata)
         preference.isCopyingEnabled = true

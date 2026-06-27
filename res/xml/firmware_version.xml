@@ -22,7 +22,7 @@
     settings:keywords="@string/keywords_android_version">
 
     <!-- Android version -->
-    <Preference
+    <com.android.settings.deviceinfo.firmwareversion.AndroidVersionCardPreference
         android:key="os_firmware_version"
         android:title="@string/firmware_version"
         android:summary="@string/summary_placeholder"
@@ -31,7 +31,7 @@
         settings:controller="com.android.settings.deviceinfo.firmwareversion.FirmwareVersionDetailPreferenceController"/>
 
     <!-- Security patch -->
-    <Preference
+    <com.android.settings.deviceinfo.firmwareversion.SecurityPatchCardPreference
         android:key="security_key"
         android:title="@string/security_patch"
         settings:enableCopying="true"

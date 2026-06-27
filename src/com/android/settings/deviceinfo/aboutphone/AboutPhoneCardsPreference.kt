@@ -323,9 +323,12 @@ abstract class AboutPhoneCardPreference @JvmOverloads constructor(
         holder.clearItemBackground()
         holder.bindCardStyle(cardStyle)
         holder.bindIcon(iconResId)
-        holder.setText(R.id.about_phone_card_title, getCardTitle())
+        holder.bindTitle(getCardTitle())
         holder.setText(R.id.about_phone_card_summary, getCardSummary())
         holder.findViewById(R.id.about_phone_card)?.setOnClickListener { onCardClick() }
+        if (hideCardScrollbars) {
+            holder.hideScrollbars()
+        }
     }
 
     open fun refresh() {
@@ -335,6 +338,31 @@ abstract class AboutPhoneCardPreference @JvmOverloads constructor(
     protected abstract val iconResId: Int
 
     protected open val cardStyle: AboutPhoneCardStyle = AboutPhoneCardStyle.Regular
+
+    protected open val showTrailingIconBackground: Boolean = true
+
+    protected open val tintTrailingIcon: Boolean = true
+
+    protected open val showCardChevron: Boolean
+        get() = cardStyle.showChevron
+
+    protected open val trailingIconFillsCard: Boolean = false
+
+    protected open val trailingIconEndInsetDp: Int = 0
+
+    protected open val titleDrawableResId: Int = 0
+
+    protected open val titleDrawableHeightDp: Int = 0
+
+    protected open val tintTitleDrawable: Boolean = true
+
+    protected open val cardMinHeightDp: Int
+        get() = cardStyle.minHeightDp
+
+    protected open val cardVerticalPaddingDp: Int
+        get() = cardStyle.verticalPaddingDp
+
+    protected open val hideCardScrollbars: Boolean = false
 
     protected abstract fun getCardTitle(): CharSequence
 
@@ -346,9 +374,74 @@ abstract class AboutPhoneCardPreference @JvmOverloads constructor(
         (findViewById(R.id.about_phone_card_icon) as? ImageView)?.setImageResource(iconResId)
     }
 
+    private fun PreferenceViewHolder.bindTitle(text: CharSequence) {
+        val title = findViewById(R.id.about_phone_card_title) as? TextView ?: return
+        if (titleDrawableResId == 0) {
+            title.setCompoundDrawablesRelative(null, null, null, null)
+            title.contentDescription = null
+            title.minHeight = 0
+            title.layoutParams = title.layoutParams.applyDimensions(
+                width = ViewGroup.LayoutParams.MATCH_PARENT,
+                height = ViewGroup.LayoutParams.WRAP_CONTENT,
+            )
+            title.text = text
+            title.visibility = if (text.isBlank()) View.GONE else View.VISIBLE
+            return
+        }
+
+        val drawable = context.getDrawable(titleDrawableResId)?.mutate()
+        if (drawable == null) {
+            title.setText(text)
+            title.visibility = if (text.isBlank()) View.GONE else View.VISIBLE
+            return
+        }
+
+        val targetHeight = context.dp(titleDrawableHeightDp.takeIf { it > 0 } ?: 30)
+        val intrinsicWidth = drawable.intrinsicWidth.takeIf { it > 0 } ?: targetHeight
+        val intrinsicHeight = drawable.intrinsicHeight.takeIf { it > 0 } ?: targetHeight
+        val availableWidth = title.width
+            .takeIf { it > 0 }
+            ?: title.measuredWidth.takeIf { it > 0 }
+            ?: title.resources.displayMetrics.widthPixels
+        val targetWidth = minOf(
+            (targetHeight.toFloat() * intrinsicWidth / intrinsicHeight).roundToInt(),
+            availableWidth,
+        )
+        val scaledHeight = (targetWidth.toFloat() * intrinsicHeight / intrinsicWidth).roundToInt()
+        drawable.setBounds(0, 0, targetWidth, scaledHeight)
+        if (tintTitleDrawable) {
+            drawable.setTintList(ColorStateList.valueOf(context.getColor(cardStyle.titleColorResId)))
+        }
+
+        title.text = null
+        title.contentDescription = text
+        title.minHeight = scaledHeight
+        title.layoutParams = title.layoutParams.applyDimensions(
+            width = ViewGroup.LayoutParams.MATCH_PARENT,
+            height = scaledHeight,
+        )
+        title.setCompoundDrawablesRelative(drawable, null, null, null)
+        title.visibility = View.VISIBLE
+    }
+
     private fun PreferenceViewHolder.clearItemBackground() {
         itemView.setBackgroundResource(android.R.color.transparent)
         itemView.foreground = null
+    }
+
+    private fun PreferenceViewHolder.hideScrollbars() {
+        itemView.hideScrollbarsRecursively()
+    }
+
+    private fun View.hideScrollbarsRecursively() {
+        isVerticalScrollBarEnabled = false
+        isHorizontalScrollBarEnabled = false
+        overScrollMode = View.OVER_SCROLL_NEVER
+        (this as? ViewGroup)?.let { viewGroup ->
+            for (index in 0 until viewGroup.childCount) {
+                viewGroup.getChildAt(index).hideScrollbarsRecursively()
+            }
+        }
     }
 
     private fun PreferenceViewHolder.bindCardStyle(style: AboutPhoneCardStyle) {
@@ -360,7 +453,7 @@ abstract class AboutPhoneCardPreference @JvmOverloads constructor(
         val summary = findViewById(R.id.about_phone_card_summary) as? TextView
 
         card?.apply {
-            setMinimumHeight(context.dp(style.minHeightDp))
+            setMinimumHeight(context.dp(cardMinHeightDp))
             val cardBackground = context.createCardBackground(style)
             background = cardBackground
             (cardBackground as? FlowingGradientRippleDrawable)?.startFlow()
@@ -372,39 +465,59 @@ abstract class AboutPhoneCardPreference @JvmOverloads constructor(
             )
             setPaddingRelative(
                 context.dp(25),
-                context.dp(style.verticalPaddingDp),
-                context.dp(20),
-                context.dp(style.verticalPaddingDp),
+                context.dp(if (trailingIconFillsCard) 0 else cardVerticalPaddingDp),
+                context.dp(if (trailingIconFillsCard) trailingIconEndInsetDp else 20),
+                context.dp(if (trailingIconFillsCard) 0 else cardVerticalPaddingDp),
             )
         }
         iconFrame?.apply {
             visibility = if (style.showTrailingIcon) View.VISIBLE else View.GONE
             if (style.showTrailingIcon) {
-                setBackgroundResource(style.iconBackgroundResId)
-                backgroundTintList = ColorStateList.valueOf(
-                    context.getPaleDynamicColor(
-                        style.iconContainerColorResId,
-                        CARD_ICON_SURFACE_BLEND_RATIO,
-                    ),
-                )
+                if (showTrailingIconBackground) {
+                    setBackgroundResource(style.iconBackgroundResId)
+                    backgroundTintList = ColorStateList.valueOf(
+                        context.getPaleDynamicColor(
+                            style.iconContainerColorResId,
+                            CARD_ICON_SURFACE_BLEND_RATIO,
+                        ),
+                    )
+                } else {
+                    background = null
+                    backgroundTintList = null
+                }
+                val iconFrameSize = if (trailingIconFillsCard) {
+                    context.dp(cardMinHeightDp)
+                } else {
+                    context.dp(style.iconBackgroundSizeDp)
+                }
                 layoutParams = layoutParams.applyDimensions(
-                    width = context.dp(style.iconBackgroundSizeDp),
-                    height = context.dp(style.iconBackgroundSizeDp),
+                    width = iconFrameSize,
+                    height = iconFrameSize,
                 )
             }
         }
         icon?.apply {
             visibility = if (style.showTrailingIcon) View.VISIBLE else View.GONE
             if (style.showTrailingIcon) {
-                imageTintList = ColorStateList.valueOf(context.getColor(style.iconTintColorResId))
+                imageTintList = if (tintTrailingIcon) {
+                    ColorStateList.valueOf(context.getColor(style.iconTintColorResId))
+                } else {
+                    null
+                }
+                val iconSize = if (trailingIconFillsCard) {
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                } else {
+                    context.dp(style.iconSizeDp)
+                }
                 layoutParams = layoutParams.applyDimensions(
-                    width = context.dp(style.iconSizeDp),
-                    height = context.dp(style.iconSizeDp),
+                    width = iconSize,
+                    height = iconSize,
                 )
+                scaleType = ImageView.ScaleType.FIT_CENTER
             }
         }
         chevron?.apply {
-            visibility = if (style.showChevron) View.VISIBLE else View.GONE
+            visibility = if (showCardChevron) View.VISIBLE else View.GONE
             imageTintList = ColorStateList.valueOf(
                 context.getColor(style.chevronTintColorResId),
             )
@@ -421,8 +534,12 @@ abstract class AboutPhoneCardPreference @JvmOverloads constructor(
         iconFrame: View?,
         chevron: ImageView?,
     ) {
-        iconFrame?.layoutParams = iconFrame.layoutParams.applyMarginStart(context.dp(16))
-        chevron?.layoutParams = chevron.layoutParams.applyMarginStart(context.dp(8))
+        iconFrame?.layoutParams = iconFrame.layoutParams.applyMarginStart(
+            context.dp(if (trailingIconFillsCard) 8 else 16),
+        )
+        chevron?.layoutParams = chevron.layoutParams.applyMarginStart(
+            context.dp(if (showCardChevron) 8 else 0),
+        )
         (findViewById(R.id.about_phone_card) as? LinearLayout)?.gravity = Gravity.CENTER_VERTICAL
     }
 
