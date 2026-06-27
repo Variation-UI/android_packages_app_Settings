@@ -139,4 +139,17 @@
             settings:enableCopying="true"
             settings:controller="com.android.settings.deviceinfo.BuildNumberPreferenceController"/>
     </PreferenceCategory>
+
+    <com.android.settingslib.widget.UntitledPreferenceCategory
+        android:key="radio_info_category"
+        android:order="300">
+
+        <Preference
+            android:key="radio_info_settings"
+            android:title="@string/radio_info_title">
+            <intent android:action="android.intent.action.MAIN"
+                    android:targetPackage="com.android.phone"
+                    android:targetClass="com.android.phone.settings.RadioInfo" />
+        </Preference>
+    </com.android.settingslib.widget.UntitledPreferenceCategory>
 </PreferenceScreen>

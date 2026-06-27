@@ -26,6 +26,7 @@ import com.android.settings.flags.Flags
 import com.android.settingslib.metadata.PreferenceCategory
 import com.android.settingslib.metadata.ProvidePreferenceScreen
 import com.android.settingslib.metadata.preferenceHierarchy
+import com.android.settingslib.widget.UntitledPreferenceCategoryMetadata
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 
@@ -59,10 +60,14 @@ open class AboutPhoneDetailsScreen : PreferenceScreenMixin {
                         +SimEidPreference(context) order 10
                     }
                 }
+            +UntitledPreferenceCategoryMetadata(RADIO_INFO_CATEGORY) order +300 += {
+                +RadioInfoPreference()
+            }
         }
 
     companion object {
         const val KEY = "about_phone_more_details"
         private const val DEVICE_IDENTIFIERS_CATEGORY = "device_identifiers_category"
+        private const val RADIO_INFO_CATEGORY = "radio_info_category"
     }
 }

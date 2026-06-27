@@ -45,7 +45,7 @@ class SimStatusPreference(
     PreferenceAvailabilityProvider {
 
     private val slotSimStatus = SlotSimStatus(context)
-    private val title = context.getFormattedTitle()
+    private val dialogTitle = context.getFormattedTitle()
 
     override val key: String
         get() = KEY_PREFIX + "${slotIndex + 1}"
@@ -61,7 +61,7 @@ class SimStatusPreference(
     override fun isEnabled(context: Context): Boolean =
         slotSimStatus.getSubscriptionInfo(slotIndex) != null
 
-    override fun getTitle(context: Context): CharSequence? = title
+    override fun getTitle(context: Context): CharSequence? = dialogTitle
 
     override fun getSummary(context: Context): CharSequence? =
         slotSimStatus.getSubscriptionInfo(slotIndex)?.carrierName
@@ -71,7 +71,7 @@ class SimStatusPreference(
         val preference = context.requirePreference<Preference>(key)
         preference.onPreferenceClickListener =
             Preference.OnPreferenceClickListener {
-                SimStatusDialogFragment.show(context.childFragmentManager, slotIndex, title)
+                SimStatusDialogFragment.show(context.childFragmentManager, slotIndex, dialogTitle)
                 true
             }
     }
