@@ -21,6 +21,7 @@ import androidx.fragment.app.Fragment
 import com.android.settings.R
 import com.android.settings.Settings.PowerUsageSummaryActivity
 import com.android.settings.core.PreferenceScreenMixin
+import com.android.settings.deviceinfo.batteryinfo.BatteryInfoScreen
 import com.android.settings.display.BatteryPercentageSwitchPreference
 import com.android.settings.flags.Flags
 import com.android.settings.fuelgauge.BatteryHeaderPreference
@@ -72,10 +73,11 @@ open class PowerUsageSummaryScreen :
     override fun getPreferenceHierarchy(context: Context, coroutineScope: CoroutineScope) =
         preferenceHierarchy(context) {
             +BatteryHeaderPreference()
-            if (Flags.deeplinkBattery25q4()) {
-                +UntitledPreferenceCategoryMetadata("power_usage_summary_category") += {
+            +UntitledPreferenceCategoryMetadata("power_usage_summary_category") += {
+                if (Flags.deeplinkBattery25q4()) {
                     +PowerUsageAdvancedScreen.KEY
                 }
+                +BatteryInfoScreen.KEY
             }
             +UntitledPreferenceCategoryMetadata("percentage_category") += {
                 +BatteryPercentageSwitchPreference()
