@@ -49,6 +49,7 @@ import com.android.settingslib.metadata.PreferenceSummaryProvider
 import com.android.settingslib.metadata.ProvidePreferenceScreen
 import com.android.settingslib.metadata.preferenceHierarchy
 import com.android.settingslib.preference.PreferenceBinding
+import com.android.settingslib.widget.UntitledPreferenceCategoryMetadata
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 
@@ -189,9 +190,13 @@ open class MobileNetworkListScreen(context: Context) :
             +SimCallsPreference() order +130
             +SimSmsPreference() order +140
             +SimMobileDataPreference() order +150
+            +UntitledPreferenceCategoryMetadata(RADIO_INFO_CATEGORY_KEY) order +200 += {
+                +RadioInfoPreference()
+            }
         }
 
     companion object {
         const val KEY = "mobile_network_list"
+        private const val RADIO_INFO_CATEGORY_KEY = "radio_info_category"
     }
 }
